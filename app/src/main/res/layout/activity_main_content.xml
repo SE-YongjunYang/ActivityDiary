@@ -57,7 +57,7 @@
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintWidth_max="400dp"
                     >
-
+                    <!--主要做修改的地方-->
                     <include
                         layout="@layout/activity_row"
                         android:layout_width="match_parent"

@@ -147,6 +147,7 @@ public class MainActivity extends BaseActivity implements
 
     private MainAsyncQueryHandler mQHandler = new MainAsyncQueryHandler(ActivityDiaryApplication.getAppContext().getContentResolver());
 
+//  保证在活动被回收之前一定会被调用,因此我们可以通过这个方法来解决活动被回收时临时数据得不到保存的问题。
     @Override
     public void onSaveInstanceState(Bundle outState) {
         outState.putString("currentPhotoPath", mCurrentPhotoPath);
@@ -161,7 +162,7 @@ public class MainActivity extends BaseActivity implements
 
         viewModel = ViewModelProviders.of(this).get(DetailViewModel.class);
 
-        // recovering the instance state
+        // recovering the instance state，恢复实例状态
         if (savedInstanceState != null) {
             mCurrentPhotoPath = savedInstanceState.getString("currentPhotoPath");
         }
@@ -181,15 +182,23 @@ public class MainActivity extends BaseActivity implements
 
         selectRecyclerView = findViewById(R.id.select_recycler);
 
+        //不明白
         View selector = findViewById(R.id.activity_background);
         selector.setOnLongClickListener(this);
+        //点击，选择/切换活动
         selector.setOnClickListener(v -> {
             // TODO: get rid of this setting?
+            /*. PreferenceManager 类中的getDefaultSharedPreferences()
+            这是一个静态方法,它接收一个Context 参数,并自动使用当前应用程序的包名作为前缀来命名
+            SharedPreferences文件*/
+            /*getBoolean(): 获取以第一个参数为key的值，若没有，则用传入的第二个参数代替*/
             if(PreferenceManager
                     .getDefaultSharedPreferences(ActivityDiaryApplication.getAppContext())
                     .getBoolean(SettingsActivity.KEY_PREF_DISABLE_CURRENT, true)){
+                // 如果要选择的活动和当前活动一样，设置当前活动为null？
                 ActivityHelper.helper.setCurrentActivity(null);
             }else{
+                // 否则
                 Intent i = new Intent(MainActivity.this, HistoryDetailActivity.class);
                 // no diaryEntryID will edit the last one
                 startActivity(i);
@@ -209,14 +218,18 @@ public class MainActivity extends BaseActivity implements
         selectRecyclerView.setLayoutManager(selectorLayoutManager);
         getSupportActionBar().setSubtitle(getResources().getString(R.string.activity_subtitle_main));
 
+        // 可能是为活动排序
         likelyhoodSort();
 
+        // 记笔记圆形图标
         fabNoteEdit = (FloatingActionButton) findViewById(R.id.fab_edit_note);
+        // 图片圆形图标
         fabAttachPicture = (FloatingActionButton) findViewById(R.id.fab_attach_picture);
 
         fabNoteEdit.setOnClickListener(v -> {
             // Handle the click on the FAB
             if(viewModel.currentActivity().getValue() != null) {
+                //如果当前有活动
                 NoteEditDialog dialog = new NoteEditDialog();
                 dialog.setText(viewModel.mNote.getValue());
                 dialog.show(getSupportFragmentManager(), "NoteEditDialogFragment");
@@ -341,6 +354,7 @@ public class MainActivity extends BaseActivity implements
     }
 
     @Override
+    //长按活动时跳转到EditActivity
     public boolean onLongClick(View view) {
         Intent i = new Intent(MainActivity.this, EditActivity.class);
         if(viewModel.currentActivity().getValue() != null) {

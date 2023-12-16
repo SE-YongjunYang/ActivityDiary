@@ -402,6 +402,7 @@ public class ActivityHelper extends AsyncQueryHandler{
         /* update the current diary entry to "finish" it
          * in theory there should be only one entry with end = NULL in the diary table
          * but who knows? -> Let's update all. */
+        // mCurrentActivity是DairyActivity对象实例，故！=即地址不同
         if(mCurrentActivity != activity) {
             ContentValues values = new ContentValues();
             Long timestamp = System.currentTimeMillis();
