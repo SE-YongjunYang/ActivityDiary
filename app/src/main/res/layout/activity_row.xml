@@ -17,7 +17,8 @@
   ~ You should have received a copy of the GNU General Public License
   ~ along with this program.  If not, see <https://www.gnu.org/licenses/>.
   -->
-
+<!--该布局是activity_history_detail_content等布局的子布局，包括活动方块的颜色和名字-->
+<!--活动卡片方块背景-->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/activity_background"
     android:layout_width="match_parent"
@@ -26,7 +27,7 @@
     android:minWidth="80dp"
     android:minHeight="60dp"
     >
-
+    <!--  未实现 活动卡片的图标  -->
     <ImageView
         android:id="@+id/activity_image"
         android:layout_width="wrap_content"

@@ -102,6 +102,7 @@ public class SettingsActivity extends BaseActivity implements SharedPreferences.
 
     private PreferenceManager mPreferenceManager;
 
+    // 监听首选项的改变，并根据改变的首选项更新应用程序的状态或界面
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
                                           String key) {
         if (key.equals(KEY_PREF_DATETIME_FORMAT)) {
@@ -258,6 +259,7 @@ public class SettingsActivity extends BaseActivity implements SharedPreferences.
         locationAgePref.setSummary(getResources().getString(R.string.pref_location_age, value));
     }
 
+    // 设置是否可以通过点击活动标签终止当前活动
     private void updateDisableCurrent() {
         if(PreferenceManager
                 .getDefaultSharedPreferences(ActivityDiaryApplication.getAppContext())
