@@ -410,23 +410,31 @@ public class MainActivity extends BaseActivity implements
     @Override
     // ****与feature有关联**** 点击活动卡片时的操作
     public void onItemClick(int adapterPosition) {
-
+        // 从适配器中获取用户点击的项目
         DiaryActivity newAct = selectAdapter.item(adapterPosition);
         if(newAct != ActivityHelper.helper.getCurrentActivity()) {
-
+            // 如果选择的是新活动
+            // 设置为新选择的活动
             ActivityHelper.helper.setCurrentActivity(newAct);
 
+            // 清空搜索视图的查询并将其设置为图标化状态。
             searchView.setQuery("", false);
             searchView.setIconified(true);
 
-
+            //创建一个SpannableStringBuilder对象，该对象包含了新活动的名称，并设置了前景色、样式和相对大小。
             SpannableStringBuilder snackbarText = new SpannableStringBuilder();
             snackbarText.append(newAct.getName());
             int end = snackbarText.length();
+            // 创建了一个新的前景色样式，0和end定义了应用样式的文本范围，Spannable.SPAN_INCLUSIVE_INCLUSIVE定义了新插入文本的样式应用规则
             snackbarText.setSpan(new ForegroundColorSpan(newAct.getColor()), 0, end, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+            // 设置文本的样式为粗体。
             snackbarText.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), 0, end, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+            // 设置文本的相对大小。
             snackbarText.setSpan(new RelativeSizeSpan((float) 1.4152), 0, end, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
 
+            // 创建一个Snackbar对象，显示新活动的名称，并添加了一个撤销操作。
+            // 如果用户点击撤销，将调用ActivityHelper.helper.undoLastActivitySelection();
+            // 来撤销最后一次活动的选择
             Snackbar undoSnackBar = Snackbar.make(findViewById(R.id.main_layout),
                     snackbarText, Snackbar.LENGTH_LONG);
             undoSnackBar.setAction(R.string.action_undo, new View.OnClickListener() {
@@ -453,61 +461,88 @@ public class MainActivity extends BaseActivity implements
         viewModel.mCurrentActivity.setValue(newAct);
 
         if(newAct != null) {
+            // 这是一个异步查询，它将在一个单独的线程中执行，以避免阻塞主线程。
+            // QUERY_CURRENT_ACTIVITY_STATS是查询的标识符，
+            // ActivityDiaryContract.DiaryActivity.CONTENT_URI是要查询的数据的URI。
             mQHandler.startQuery(QUERY_CURRENT_ACTIVITY_STATS, null,
                     ActivityDiaryContract.DiaryActivity.CONTENT_URI,
+                    // 从查询中返回的列的列表
                     new String[] {
                             ActivityDiaryContract.DiaryActivity._ID,
                             ActivityDiaryContract.DiaryActivity.NAME,
                             ActivityDiaryContract.DiaryActivity.X_AVG_DURATION,
                             ActivityDiaryContract.DiaryActivity.X_START_OF_LAST
                     },
+                    // 查询的选择条件，它将选择那些未被删除且ID等于newAct.getId()的活动。
                     ActivityDiaryContract.DiaryActivity._DELETED + " = 0 AND "
                     + ActivityDiaryContract.DiaryActivity._ID + " = ?",
+                    // 选择条件的参数，它将替换选择条件中的?
                     new String[] {
                             Integer.toString(newAct.getId())
                     },
                     null);
 
+            // 另一个查询，它可能会查询所有的总计
             queryAllTotals();
         }
 
+        // 更新视图模型（ViewModel）的值
+        // 将视图模型的当前日记URI设置为ActivityHelper的当前日记URI
         viewModel.setCurrentDiaryUri(ActivityHelper.helper.getCurrentDiaryUri());
+        // 通过ID找到一个名为activity_name的TextView，并将其引用存储在aName变量中
         TextView aName = findViewById(R.id.activity_name);
         // TODO: move this logic into the DetailViewModel??
 
+        // 将视图模型的mAvgDuration、mStartOfLast和mTotalToday的值都设置为"-"。
+        // 这里应该对应活动标签下面的方框区域statistic里的数据,初始化这些值，或者在等待查询结果时显示的占位符
         viewModel.mAvgDuration.setValue("-");
         viewModel.mStartOfLast.setValue("-");
         viewModel.mTotalToday.setValue("-");
         /* stats are updated after query finishes in mQHelper */
 
         if(viewModel.currentActivity().getValue() != null) {
+            // 视图模型的当前活动不为空
+            // 将aName的文本设置为当前活动的名称
             aName.setText(viewModel.currentActivity().getValue().getName());
+            // 将ID为activity_background的视图的背景色设置为当前活动的颜色
             findViewById(R.id.activity_background).setBackgroundColor(viewModel.currentActivity().getValue().getColor());
+            // 将aName的文本颜色设置为当前活动颜色的背景上的文本颜色
             aName.setTextColor(GraphicsHelper.textColorOnBackground(viewModel.currentActivity().getValue().getColor()));
+            // 将视图模型的mNote的值设置为ActivityHelper的当前注释
             viewModel.mNote.setValue(ActivityHelper.helper.getCurrentNote());
         }else{
+            // 根据Android版本获取主题颜色
             int col;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 col = ActivityDiaryApplication.getAppContext().getResources().getColor(R.color.colorPrimary, null);
             }else {
                 col = ActivityDiaryApplication.getAppContext().getResources().getColor(R.color.colorPrimary);
             }
+            // 将aName的文本设置为没有选定活动的标题
             aName.setText(getResources().getString(R.string.activity_title_no_selected_act));
+            // 将ID为activity_background的视图的背景色设置为主题颜色
             findViewById(R.id.activity_background).setBackgroundColor(col);
+            // 将aName的文本颜色设置为主题颜色的背景上的文本颜色
             aName.setTextColor(GraphicsHelper.textColorOnBackground(col));
+            // 将视图模型的mDuration和mNote的值都设置为占位符
             viewModel.mDuration.setValue("-");
             viewModel.mNote.setValue("");
         }
+        // 将选择器布局管理器滚动到位置0,在scrollToPosition(0);中，参数0表示要滚动到的位置。
+        // 因此，这个方法将滚动列表以使位置为0的项（通常是列表的第一项）可见, 但在屏幕的什么位置是不管的
         selectorLayoutManager.scrollToPosition(0);
     }
 
     public void queryAllTotals() {
         // TODO: move this into the DetailStatFragement
+        // 从视图模型中获取当前活动，并将其存储在变量a中
         DiaryActivity a = viewModel.mCurrentActivity.getValue();
         if(a != null) {
             int id = a.getId();
 
+            // 获取当前时间的毫秒数
             long end = System.currentTimeMillis();
+            // 调用queryTotal方法来查询当前活动在当天、当周和当月的总计
             queryTotal(Calendar.DAY_OF_YEAR, end, id);
             queryTotal(Calendar.WEEK_OF_YEAR, end, id);
             queryTotal(Calendar.MONTH, end, id);
@@ -515,12 +550,18 @@ public class MainActivity extends BaseActivity implements
     }
 
     private void queryTotal(int field, long end, int actID) {
+        // 使用DateHelper.startOf方法获取指定时间段的开始时间，并将其存储在calStart中
         Calendar calStart = DateHelper.startOf(field, end);
+        // 将calStart的时间转换为毫秒数，并将其存储在start中
         long start = calStart.getTimeInMillis();
+        // 获取DiaryStats的内容URI，并将其存储在u中。
         Uri u = ActivityDiaryContract.DiaryStats.CONTENT_URI;
+        // 将开始时间和结束时间添加到URI的路径中
         u = Uri.withAppendedPath(u, Long.toString(start));
         u = Uri.withAppendedPath(u, Long.toString(end));
 
+        // 用于查询特定活动在特定时间段内的总时长
+        // 开始一个异步查询，查询的标识符为QUERY_CURRENT_ACTIVITY_TOTAL，查询参数为一个新的StatParam对象
         mQHandler.startQuery(QUERY_CURRENT_ACTIVITY_TOTAL, new StatParam(field, end),
                 u,
                 new String[] {
@@ -555,6 +596,9 @@ public class MainActivity extends BaseActivity implements
 
     @Override
     public void onActivityDataChanged(DiaryActivity activity){
+        // 通知适配器（selectAdapter）中的某一项数据已经更改。
+        // selectAdapter.positionOf(activity)会返回activity在适配器中的位置，
+        // 然后notifyItemChanged方法会通知适配器在该位置的数据已经更改
         selectAdapter.notifyItemChanged(selectAdapter.positionOf(activity));
     }
 
@@ -580,27 +624,36 @@ public class MainActivity extends BaseActivity implements
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        // 获取MenuInflater对象，它用于将菜单XML文件转化为实际的菜单项
         MenuInflater inflater = getMenuInflater();
+        // 将main_menu菜单资源文件转化为菜单项，并添加到menu中
         inflater.inflate(R.menu.main_menu, menu);
 
         // Get the SearchView and set the searchable configuration
+        // 获取SearchManager服务，它用于处理搜索操作
         SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        // 从菜单中找到ID为action_filter的菜单项，并将其存储在searchMenuItem中
         searchMenuItem = menu.findItem(R.id.action_filter);
+        // 获取searchMenuItem的ActionView，并将其转化为SearchView对象
         searchView = (SearchView) searchMenuItem.getActionView();
         // Assumes current activity is the searchable activity
         searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
 
+        // 为SearchView设置关闭监听器和查询文本监听器
         searchView.setOnCloseListener(this);
         searchView.setOnQueryTextListener(this);
         // setOnSuggestionListener -> for selection of a suggestion
         // setSuggestionsAdapter
+        // 为SearchView设置搜索点击监听器，当用户点击搜索按钮时，会调用setSearchMode(true)方法
         searchView.setOnSearchClickListener(v -> setSearchMode(true));
         return true;
     }
 
     @Override
+    // 处理选项菜单项被点击事件的方法, 当选项菜单中的某一项被点击时，会被调用。参数item是被点击的菜单项
     public boolean onOptionsItemSelected(MenuItem item) {
         switch(item.getItemId()){
+            // 主页面右上角的加号
             case R.id.action_add_activity:
                 startActivity(new Intent(this, EditActivity.class));
                 break;
@@ -611,27 +664,39 @@ public class MainActivity extends BaseActivity implements
         return super.onOptionsItemSelected(item);
     }
 
+    // 处理新的意图，包括搜索和选择活动两种情况
     protected void onNewIntent(Intent intent) {
         if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
+            // 如果新的意图的动作是搜索
+            // 从意图中获取查询字符串，并将其存储在query中
             String query = intent.getStringExtra(SearchManager.QUERY);
+            // 调用filterActivityView方法来过滤活动视图
             filterActivityView(query);
         }
 
+        // 如果新的意图包含额外的数据SELECT_ACTIVITY_WITH_ID
         if (intent.hasExtra("SELECT_ACTIVITY_WITH_ID")) {
+            // 从意图中获取SELECT_ACTIVITY_WITH_ID的值，并将其存储在id中
             int id = intent.getIntExtra("SELECT_ACTIVITY_WITH_ID", -1);
+            // 将当前活动设置为ID为id的活动
             ActivityHelper.helper.setCurrentActivity(ActivityHelper.helper.activityWithId(id));
         }
     }
 
+    // 用于根据查询字符串过滤和排序活动视图, 可能是主页面点击查询后的操作
     private void filterActivityView(String query){
         this.filter = query;
         if(filter.length() == 0){
             likelyhoodSort();
         }else {
+            // 使用ActivityHelper的sortedActivities方法根据查询字符串对活动进行排序，并将结果存储在filtered中
             ArrayList<DiaryActivity> filtered = ActivityHelper.helper.sortedActivities(query);
 
+            // 使用过滤后的活动列表创建一个新的SelectRecyclerViewAdapter，并将其赋值给selectAdapter
             selectAdapter = new SelectRecyclerViewAdapter(MainActivity.this, filtered);
+            // 将selectRecyclerView的适配器替换为新的selectAdapter
             selectRecyclerView.swapAdapter(selectAdapter, false);
+            // 将selectRecyclerView滚动到位置0（通常是列表的第一项）
             selectRecyclerView.scrollToPosition(0);
         }
     }
@@ -666,17 +731,24 @@ public class MainActivity extends BaseActivity implements
     }
 
     @Override
+    // 处理用户在笔记编辑对话框中输入的笔记，并将其更新到数据库和视图模型中
+    // 公共方法，当用户在笔记编辑对话框中点击positive按钮时，会被调用。参数str是用户输入的字符串，dialog是对话框
     public void onNoteEditPositiveClock(String str, DialogFragment dialog) {
+        // 创建一个新的ContentValues对象，它用于存储一组值
         ContentValues values = new ContentValues();
+        // 创建一个新的ContentValues对象，它用于存储一组值
         values.put(ActivityDiaryContract.Diary.NOTE, str);
 
+        // 开始一个异步更新操作，更新的URI是视图模型的当前日记URI，更新的值是values
         mQHandler.startUpdate(0,
                 null,
                 viewModel.getCurrentDiaryUri(),
                 values,
                 null, null);
 
+        // 将视图模型的mNote的值设置为用户输入的字符串
         viewModel.mNote.postValue(str);
+        // 将ActivityHelper的当前笔记设置为用户输入的字符串
         ActivityHelper.helper.setCurrentNote(str);
     }
 
@@ -720,6 +792,7 @@ public class MainActivity extends BaseActivity implements
     }
 
 
+    // 设置ViewPager，包括创建适配器，添加片段，并设置适配器
     private void setupViewPager(ViewPager viewPager) {
         ViewPagerAdapter adapter = new ViewPagerAdapter(getSupportFragmentManager());
         adapter.addFragment(new DetailStatFragement(), getResources().getString(R.string.fragment_detail_stats_title));
@@ -769,10 +842,13 @@ public class MainActivity extends BaseActivity implements
         }
 
         @Override
+        // 查询完成时被调用。它接受一个查询标记（token）、一个对象（cookie）和一个Cursor对象作为参数
         protected void onQueryComplete(int token, Object cookie, Cursor cursor) {
             super.onQueryComplete(token, cookie, cursor);
             if ((cursor != null) && cursor.moveToFirst()) {
+                // 如果cursor不为空并且有至少一行数据
                 if (token == QUERY_CURRENT_ACTIVITY_STATS) {
+                    // 查询标记等于QUERY_CURRENT_ACTIVITY_STATS，那么获取平均持续时间和最后一次活动的开始时间，并将它们设置为视图模型的值
                     long avg = cursor.getLong(cursor.getColumnIndex(ActivityDiaryContract.DiaryActivity.X_AVG_DURATION));
                     viewModel.mAvgDuration.setValue(getResources().
                             getString(R.string.avg_duration_description, TimeSpanFormatter.format(avg)));
@@ -787,6 +863,7 @@ public class MainActivity extends BaseActivity implements
                             getString(R.string.last_done_description, DateFormat.format(formatString, start)));
 
                 }else if(token == QUERY_CURRENT_ACTIVITY_TOTAL) {
+                    // 如果查询标记等于QUERY_CURRENT_ACTIVITY_TOTAL，那么获取总持续时间，并根据field的值将其设置为视图模型的相应值。
                     StatParam p = (StatParam)cookie;
                     long total = cursor.getLong(cursor.getColumnIndex(ActivityDiaryContract.DiaryStats.DURATION));
 

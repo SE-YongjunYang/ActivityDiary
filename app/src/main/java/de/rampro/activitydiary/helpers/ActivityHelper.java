@@ -175,9 +175,12 @@ public class ActivityHelper extends AsyncQueryHandler{
         return result;
     }
 
+    // 用于安排刷新任务，任务的周期时间取决于当前活动的持续时间
     public void scheduleRefresh() {
         int cycleTime;
+        // 计算当前时间与mCurrentActivityStartTime（当前活动开始时间）之间的差值delta，单位为秒
         long delta = (new Date().getTime() - mCurrentActivityStartTime.getTime() + 500) / 1000;
+        // 根据delta的值设置cycleTime（周期时间）的值，单位为毫秒
         if(delta <= 15) {
             cycleTime = 1000 * 10;
         }else if(delta <= 45){
@@ -187,6 +190,7 @@ public class ActivityHelper extends AsyncQueryHandler{
         }else{
             cycleTime = 1000 * 60 * 5; /* 5 min for now. if we want we can make this time configurable in the settings */
         }
+        // 创建一个新的ComponentName对象，它表示RefreshService组件
         ComponentName componentName = new ComponentName(ActivityDiaryApplication.getAppContext(), RefreshService.class);
         JobInfo.Builder builder = new JobInfo.Builder(ACTIVITY_HELPER_REFRESH_JOB, componentName);
         builder.setMinimumLatency(cycleTime);
@@ -200,6 +204,7 @@ public class ActivityHelper extends AsyncQueryHandler{
 // TODO: do we need to keep track on the scheduled jobs, or is a waiting job with the same ID as a new one automatically canceled?
     }
 
+    // 根据查询字符串对活动进行排序，排序的依据是查询字符串与活动名称的距离
     public ArrayList<DiaryActivity> sortedActivities(String query) {
         ArrayList<DiaryActivity> filtered = new ArrayList<DiaryActivity>(ActivityHelper.helper.getActivities().size());
         ArrayList<Integer> filteredDist = new ArrayList<Integer>(ActivityHelper.helper.getActivities().size());
@@ -332,6 +337,7 @@ public class ActivityHelper extends AsyncQueryHandler{
     }
 
     @Override
+    // 处理查询完成后的操作，包括处理所有活动的查询、当前活动的查询和未删除活动的查询
     protected void onQueryComplete(int token, Object cookie,
                                    Cursor cursor) {
         if ((cursor != null) && cursor.moveToFirst()) {
@@ -398,19 +404,24 @@ public class ActivityHelper extends AsyncQueryHandler{
     public String getCurrentNote() { return mCurrentNote;}
     public void setCurrentNote(String str) { mCurrentNote = str;}
 
+    // 将传入的活动设置为当前的活动
     public void setCurrentActivity(@Nullable DiaryActivity activity){
         /* update the current diary entry to "finish" it
          * in theory there should be only one entry with end = NULL in the diary table
          * but who knows? -> Let's update all. */
         // mCurrentActivity是DairyActivity对象实例，故！=即地址不同
         if(mCurrentActivity != activity) {
+            // 先把更新前的活动的结束时间更新
             ContentValues values = new ContentValues();
+            // 创建一个新的ContentValues对象，并将当前时间的毫秒数作为结束时间放入values中
             Long timestamp = System.currentTimeMillis();
             values.put(ActivityDiaryContract.Diary.END, timestamp);
 
+            // 开始一个异步更新操作，更新的URI是日记的内容URI，更新的值是values，选择条件是结束时间为NULL
             startUpdate(UPDATE_CLOSE_ACTIVITY, timestamp, ActivityDiaryContract.Diary.CONTENT_URI,
                     values, ActivityDiaryContract.Diary.END + " is NULL", null);
 
+            // 再设置传入的活动为当前活动
             mCurrentActivity = activity;
             mCurrentDiaryUri = null;
             mCurrentActivityStartTime.setTime(timestamp);
@@ -426,6 +437,7 @@ public class ActivityHelper extends AsyncQueryHandler{
         }
     }
 
+    // 用于显示当前活动的通知，如果用户设置了显示当前活动的通知，并且当前活动不为空
     public void showCurrentActivityNotification() {
         if(PreferenceManager
                 .getDefaultSharedPreferences(ActivityDiaryApplication.getAppContext())
@@ -438,6 +450,7 @@ public class ActivityHelper extends AsyncQueryHandler{
             }else {
                 col = ActivityDiaryApplication.getAppContext().getResources().getColor(R.color.colorPrimary);
             }
+            // 新建NotificationCompat.Builder对象，并设置其颜色、小图标、内容标题、优先级和是否显示时间
             notificationBuilder =
                     new NotificationCompat.Builder(ActivityDiaryApplication.getAppContext(),
                             CURRENT_ACTIVITY_CHANNEL_ID)
@@ -448,6 +461,7 @@ public class ActivityHelper extends AsyncQueryHandler{
                             .setShowWhen(false);
             // TODO: add icon on implementing #33
 
+            // 根据用户的设置决定是否只在第一次显示通知时发出警报。
             notificationBuilder.setOnlyAlertOnce(PreferenceManager
                     .getDefaultSharedPreferences(ActivityDiaryApplication.getAppContext())
                     .getBoolean(SettingsActivity.KEY_PREF_SILENT_RENOTIFICATIONS, true));
@@ -466,7 +480,9 @@ public class ActivityHelper extends AsyncQueryHandler{
         }
     }
 
+    // 更新状态栏的通知
     public void updateNotification(){
+        // 获取当前活动的持续时间，并将其格式化为模糊格式。
         String duration = ActivityDiaryApplication.getAppContext().getResources().
                 getString(R.string.duration_description, TimeSpanFormatter.fuzzyFormat(ActivityHelper.helper.getCurrentActivityStartTime(), new Date()));
 
@@ -475,6 +491,7 @@ public class ActivityHelper extends AsyncQueryHandler{
             // also in case the notification is disabled in the settings notificationBuilder is null
             boolean needUpdate = false;
             int idx = 0;
+            // 遍历notificationBuilder的所有动作，检查是否需要更新通知。如果动作的数量小于活动的数量，或者动作的ID与活动的ID不匹配，那么需要更新通知
             for(NotificationCompat.Action a: notificationBuilder.mActions){
                 if(notificationBuilder.mActions.size() - idx - 1 < activities.size()
                     &&
@@ -501,13 +518,15 @@ public class ActivityHelper extends AsyncQueryHandler{
                     }
                 }
             }
+            // 将通知的内容文本设置为持续时间
             notificationBuilder.setContentText(duration);
+            // 使用notificationManager发布通知。
             notificationManager.notify(CURRENT_ACTIVITY_NOTIFICATION_ID, notificationBuilder.build());
         }
     }
 
     /* undo the last activity selection by deleteing all open entries
-     *
+     * 删除结束时间为零的活动来撤销活动
      * */
     public void undoLastActivitySelection() {
         if(mCurrentActivity != null) {
@@ -519,10 +538,11 @@ public class ActivityHelper extends AsyncQueryHandler{
     }
 
     @Override
+    // 在更新操作完成时被调用
     protected void onUpdateComplete(int token, Object cookie, int result) {
         if(token == UPDATE_CLOSE_ACTIVITY) {
             if(mCurrentActivity != null) {
-                /* create a new diary entry */
+                /* create a new diary entry 新活动， 新增diary entry*/
                 ContentValues values = new ContentValues();
 
                 values.put(ActivityDiaryContract.Diary.ACT_ID, mCurrentActivity.getId());
@@ -556,6 +576,7 @@ public class ActivityHelper extends AsyncQueryHandler{
             ContentValues values = new ContentValues();
             values.putNull(ActivityDiaryContract.Diary.END);
 
+            // 应该是undo撤销操作后，更新恢复上一个活动
             startUpdate(REOPEN_LAST_DIARY_ENTRY, null,
                     ActivityDiaryContract.Diary.CONTENT_URI,
                     values,
