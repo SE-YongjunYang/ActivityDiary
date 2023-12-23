@@ -95,6 +95,7 @@ import de.rampro.activitydiary.ui.settings.SettingsActivity;
  *
  * */
 public class MainActivity extends BaseActivity implements
+        // 此接口定义了Item短长按事件方法
         SelectRecyclerViewAdapter.SelectListener,
         ActivityHelper.DataChangedListener,
         NoteEditDialog.NoteEditDialogListener,
