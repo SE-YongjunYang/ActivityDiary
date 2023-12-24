@@ -175,7 +175,8 @@ public class ActivityHelper extends AsyncQueryHandler{
         return result;
     }
 
-    // 用于安排刷新任务，任务的周期时间取决于当前活动的持续时间
+    // 目的是根据当前活动的持续时间来动态调整刷新任务的频率。
+    // 活动持续时间越长，刷新频率就越低。这可能是为了在活动持续时间较长时节省资源。
     public void scheduleRefresh() {
         int cycleTime;
         // 计算当前时间与mCurrentActivityStartTime（当前活动开始时间）之间的差值delta，单位为秒
@@ -258,6 +259,8 @@ public class ActivityHelper extends AsyncQueryHandler{
         void onActivityOrderChanged();
 
     }
+
+    // 注册的liseners列表，监听ActicityHelper的数据变化
     private List<DataChangedListener> mDataChangeListeners;
 
     public void registerDataChangeListener(DataChangedListener listener){
@@ -268,7 +271,7 @@ public class ActivityHelper extends AsyncQueryHandler{
         mDataChangeListeners.remove(listener);
     }
 
-    /* Access only allowed via ActivityHelper.helper singleton */
+    /* Access only allowed via ActivityHelper.helper singleton 单例模式*/
     private ActivityHelper(){
         super(ActivityDiaryApplication.getAppContext().getContentResolver());
         mDataChangeListeners = new ArrayList<DataChangedListener>(3);
@@ -281,9 +284,11 @@ public class ActivityHelper extends AsyncQueryHandler{
                 new DayTimeCondition(this),
                 new PausedCondition(this)
         };
+        // 从数据库重新加载数据
         reloadAll();
 
         LocationHelper.helper.updateLocation();
+        // 设置当前活动的开始时间？
         mCurrentActivityStartTime = new Date();
         createNotificationChannels();
         scheduleRefresh();
@@ -328,6 +333,7 @@ public class ActivityHelper extends AsyncQueryHandler{
     /* start the query to read the current activity
      * will trigger the update of currentActivity and send notifications afterwards */
     public void readCurrentActivity() {
+        // 查询当前活动
         startQuery(QUERY_CURRENT_ACTIVITY, null, ActivityDiaryContract.Diary.CONTENT_URI,
                 DIARY_PROJ, ActivityDiaryContract.Diary.START + " = (SELECT MAX("
                 + ActivityDiaryContract.Diary.START + ") FROM "
