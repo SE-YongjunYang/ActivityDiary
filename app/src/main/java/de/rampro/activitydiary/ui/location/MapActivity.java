@@ -48,7 +48,7 @@ import de.rampro.activitydiary.db.ActivityDiaryContract;
 import de.rampro.activitydiary.helpers.LocationHelper;
 import de.rampro.activitydiary.ui.generic.BaseActivity;
 
-public class MapActivity extends BaseActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+public class MapActivity extends BaseActivity  implements LoaderManager.LoaderCallbacks<Cursor>{
     private static final int LOADER_ID_INIT = 0;
 
     private static final String[] PROJECTION = new String[] {

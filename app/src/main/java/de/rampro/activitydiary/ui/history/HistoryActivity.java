@@ -38,6 +38,8 @@ import androidx.cursoradapter.widget.CursorAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.appcompat.widget.SearchView;
 import androidx.recyclerview.widget.StaggeredGridLayoutManager;
+
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -224,10 +226,15 @@ public class HistoryActivity extends BaseActivity implements
             }
         } else if (ActivityDiaryContentProvider.SEARCH_DATE.equals(intent.getAction())) {
             Uri data = intent.getData();
-            if (data != null) {
 
+            String date = intent.getStringExtra("date");
+            if (data != null ) {
                 query = data.getPath();
-                query = query.replaceFirst("/","");
+                query = query.replaceFirst("/", "");
+                filterHistoryDates(query);
+            }
+            if (date != null ) {
+                query = date;
                 filterHistoryDates(query);
             }
         } else if (Intent.ACTION_SEARCH.equals(intent.getAction())) {

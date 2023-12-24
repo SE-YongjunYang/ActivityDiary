@@ -26,6 +26,7 @@ import android.widget.TextView;
 
 import de.rampro.activitydiary.R;
 
+// 用于在RecyclerView中表示和处理一个项
 class SelectViewHolders extends RecyclerView.ViewHolder implements View.OnClickListener, View.OnLongClickListener {
 
     public TextView mName;

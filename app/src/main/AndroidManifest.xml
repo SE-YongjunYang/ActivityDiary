@@ -87,6 +87,8 @@
         </activity>
         <activity android:name=".ui.generic.AboutActivity"
             android:label="@string/activity_title_about" />
+        <activity android:name=".ui.statistics.DateActivity"
+            android:label="@string/activity_title_date"/>
         <activity android:name=".ui.generic.PrivacyPolicyActivity"
             android:label="@string/activity_title_privacy_policy" />
         <activity android:name=".ui.settings.SettingsActivity"

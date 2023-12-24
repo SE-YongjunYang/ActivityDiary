@@ -30,6 +30,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -64,6 +65,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -95,8 +97,9 @@ import de.rampro.activitydiary.ui.settings.SettingsActivity;
  *
  * */
 public class MainActivity extends BaseActivity implements
-        // 此接口定义了Item短长按事件方法
+        // *此接口定义了Item短长按事件方法*
         SelectRecyclerViewAdapter.SelectListener,
+        // *实现了 onActivityChanged()方法*
         ActivityHelper.DataChangedListener,
         NoteEditDialog.NoteEditDialogListener,
         View.OnLongClickListener,
@@ -126,6 +129,13 @@ public class MainActivity extends BaseActivity implements
     private ViewPager viewPager;
     private TabLayout tabLayout;
     private View headerView;
+
+    /*********************************************/
+    // 新增pause按钮
+    private Button pauseButton;
+    // 保存资源ID
+    int pauseButtonDrawableId = R.drawable.button_not_play;
+    /*********************************************/
 
     // 用于在搜索模式和正常模式之间切换界面的显示
     private void setSearchMode(boolean searchMode){
@@ -207,6 +217,12 @@ public class MainActivity extends BaseActivity implements
                     .getBoolean(SettingsActivity.KEY_PREF_DISABLE_CURRENT, true)){
                 // 如果true(代表当前活动可由点击最上面的活动标签终止,在：setting -> Terminate activity by.)
                 // 或者不存在，设置当前活动为null
+                /*********************************************/
+                if(ActivityHelper.helper.getCurrentActivity() != null && pauseButtonDrawableId != R.drawable.button_not_play) {
+                    pauseButton.setBackgroundResource(R.drawable.button_not_play);
+                    pauseButtonDrawableId = R.drawable.button_not_play;
+                }
+                /*********************************************/
                 ActivityHelper.helper.setCurrentActivity(null);
             }else{
                 // 否则(当前活动不可由点击最上面的活动标签终止)，创建新的Intent,并启动 HistoryDetailActivity
@@ -309,6 +325,54 @@ public class MainActivity extends BaseActivity implements
             fabAttachPicture.hide();
         }
 
+        /*********************************************/
+        /*新增pauseButton及其点击事件*/
+        pauseButton = (Button) findViewById(R.id.pause_button);
+        pauseButton.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                if(pauseButtonDrawableId == R.drawable.button_not_play) {
+                    if( ActivityHelper.helper.getCurrentActivity() == null){
+                        // 如果当前无活动
+                        // TODO: format显示信息
+                        Toast.makeText(MainActivity.this, "To perform this action it is necessary to select an activity first", Toast.LENGTH_LONG).show();
+                    }
+                    else {
+                        pauseButton.setBackgroundResource(R.drawable.button_playing);
+                        pauseButtonDrawableId = R.drawable.button_playing;
+                        // TODO: 设置开始当前活动
+                        ActivityHelper.helper.setCurrentActivity(ActivityHelper.helper.getCurrentActivity());
+                    }
+                }
+                else if(pauseButtonDrawableId == R.drawable.button_playing) {
+                    pauseButton.setBackgroundResource(R.drawable.button_pause);
+                    pauseButtonDrawableId = R.drawable.button_pause;
+                    // TODO: 暂停当前活动，修改持续时间
+                }
+                else if(pauseButtonDrawableId == R.drawable.button_pause) {
+                    pauseButton.setBackgroundResource(R.drawable.button_playing);
+                    pauseButtonDrawableId = R.drawable.button_playing;
+                    // TODO: 恢复当前活动，修改持续时间
+                }
+            }
+        });
+        pauseButton.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                if(pauseButtonDrawableId == R.drawable.button_pause || pauseButtonDrawableId == R.drawable.button_playing){
+                    pauseButton.setBackgroundResource(R.drawable.button_not_play);
+                    pauseButtonDrawableId = R.drawable.button_not_play;
+                    // TODO: 结束当前活动，修改持续时间
+                    ActivityHelper.helper.setCurrentActivity(null);
+                }
+
+                // 返回值为true过滤单击事件，使长按和点击处理不同事件
+                return true;
+            }
+        });
+        /*********************************************/
+
         // Get the intent, verify the action and get the search query
         // 处理用户的搜索请求，并根据搜索查询来更新界面
         Intent intent = getIntent();
@@ -317,6 +381,7 @@ public class MainActivity extends BaseActivity implements
             filterActivityView(query);
         }
 // TODO: this is crazy to call onActivityChagned here, as it reloads the statistics and refills the viewModel... Completely against the idea of the viewmodel :-(
+        // 使活动label变化的方法
         onActivityChanged(); /* do this at the very end to ensure that no Loader finishes its data loading before */
     }
 
@@ -370,6 +435,8 @@ public class MainActivity extends BaseActivity implements
         // 获取导航视图的菜单，找到 ID 为 R.id.nav_main 的菜单项，并将其设置为选中状态
         mNavigationView.getMenu().findItem(R.id.nav_main).setChecked(true);
         // 注册了一个数据变化监听器。当数据发生变化时，当前类的 onDataChange 方法会被调用
+        // 当ActivityHelper中的数据发生变化时，它会通知所有已注册的监听器(包括当前类)
+        // 并调用它们的onDataChange方法（或类似的方法）。这样，当前类就可以在数据发生变化时得到通知，并做出相应的响应
         ActivityHelper.helper.registerDataChangeListener(this);
         onActivityChanged(); /* refresh the current activity data */
         super.onResume();
@@ -501,6 +568,7 @@ public class MainActivity extends BaseActivity implements
         viewModel.mTotalToday.setValue("-");
         /* stats are updated after query finishes in mQHelper */
 
+        // 和功能有关！
         if(viewModel.currentActivity().getValue() != null) {
             // 视图模型的当前活动不为空
             // 将aName的文本设置为当前活动的名称

@@ -20,6 +20,8 @@
 package de.rampro.activitydiary.ui.generic;
 
 
+import static de.rampro.activitydiary.R.id.nav_about;
+
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
@@ -86,7 +88,7 @@ public class AboutActivity extends BaseActivity {
 
     @Override
     public void onResume(){
-        mNavigationView.getMenu().findItem(R.id.nav_about).setChecked(true);
+        mNavigationView.getMenu().findItem(nav_about).setChecked(true);
         super.onResume();
     }
 }
