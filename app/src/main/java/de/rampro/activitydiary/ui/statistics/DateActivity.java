@@ -29,12 +29,16 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.CalendarView;
+import android.widget.DatePicker;
 import android.widget.Toast;
+
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
 
 import org.osmdroid.config.Configuration;
+
+import java.util.Calendar;
 
 import de.rampro.activitydiary.R;
 import de.rampro.activitydiary.ui.generic.BaseActivity;
@@ -61,7 +65,7 @@ public class DateActivity extends BaseActivity {
             public void onSelectedDayChange(CalendarView view, int year, int month, int dayOfMonth) {
                 int month1=month+1;
                 Log.d("TAG","month1:"+month1);
-                Toast.makeText(DateActivity.this, "您选择的时间是：" + year + "年" + month1 + "月" + dayOfMonth + "日", Toast.LENGTH_SHORT).show();
+                Toast.makeText(DateActivity.this, "The date you choose is: " + year + "." + month1 + "." + dayOfMonth + ".", Toast.LENGTH_SHORT).show();
                 String temp =year+"."+month1+"."+dayOfMonth;
                 Intent inte = new Intent(DateActivity.this,HistoryActivity.class);
                 inte.putExtra("date",temp);
@@ -69,8 +73,8 @@ public class DateActivity extends BaseActivity {
                 startActivity(inte);
 
             }
-
         });
+
         mDrawerToggle.setDrawerIndicatorEnabled(false);
     }
 
