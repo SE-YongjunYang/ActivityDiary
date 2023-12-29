@@ -20,12 +20,15 @@ package de.rampro.activitydiary.ui.main;
 
 import android.Manifest;
 import android.app.SearchManager;
+
+import androidx.appcompat.app.AlertDialog;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModelProviders;
 import android.content.AsyncQueryHandler;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -134,7 +137,7 @@ public class MainActivity extends BaseActivity implements
     // 新增pause按钮
     private Button pauseButton;
     // 保存资源ID
-    int pauseButtonDrawableId = R.drawable.button_not_play;
+    private int pauseButtonDrawableId = R.drawable.button_not_play;
     /*********************************************/
 
     // 用于在搜索模式和正常模式之间切换界面的显示
@@ -217,13 +220,29 @@ public class MainActivity extends BaseActivity implements
                     .getBoolean(SettingsActivity.KEY_PREF_DISABLE_CURRENT, true)){
                 // 如果true(代表当前活动可由点击最上面的活动标签终止,在：setting -> Terminate activity by.)
                 // 或者不存在，设置当前活动为null
-                /*********************************************/
-                if(ActivityHelper.helper.getCurrentActivity() != null && pauseButtonDrawableId != R.drawable.button_not_play) {
-                    pauseButton.setBackgroundResource(R.drawable.button_not_play);
-                    pauseButtonDrawableId = R.drawable.button_not_play;
-                }
-                /*********************************************/
-                ActivityHelper.helper.setCurrentActivity(null);
+
+                AlertDialog.Builder dialog = new AlertDialog.Builder (MainActivity.
+                        this);
+                dialog.setTitle("Second confirmation");
+                dialog.setMessage("Do you want to end the current activity？");
+                dialog.setCancelable(false);
+                dialog.setPositiveButton("Yes", new DialogInterface.
+                        OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        ActivityHelper.helper.setCurrentActivity(null);
+                        //修改按钮
+                        pauseButton.setBackgroundResource(R.drawable.button_not_play);
+                        pauseButtonDrawableId = R.drawable.button_not_play;
+                    }
+                });
+                dialog.setNegativeButton("Cancel", new DialogInterface.
+                        OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                });
+                dialog.show();
             }else{
                 // 否则(当前活动不可由点击最上面的活动标签终止)，创建新的Intent,并启动 HistoryDetailActivity
                 Intent i = new Intent(MainActivity.this, HistoryDetailActivity.class);
@@ -345,22 +364,22 @@ public class MainActivity extends BaseActivity implements
                         ActivityHelper.helper.setCurrentActivity(ActivityHelper.helper.getCurrentActivity());
                     }
                 }
-                else if(pauseButtonDrawableId == R.drawable.button_playing) {
-                    pauseButton.setBackgroundResource(R.drawable.button_pause);
-                    pauseButtonDrawableId = R.drawable.button_pause;
-                    // TODO: 暂停当前活动，修改持续时间
-                }
-                else if(pauseButtonDrawableId == R.drawable.button_pause) {
-                    pauseButton.setBackgroundResource(R.drawable.button_playing);
-                    pauseButtonDrawableId = R.drawable.button_playing;
-                    // TODO: 恢复当前活动，修改持续时间
-                }
+//                else if(pauseButtonDrawableId == R.drawable.button_playing) {
+//                    pauseButton.setBackgroundResource(R.drawable.button_pause);
+//                    pauseButtonDrawableId = R.drawable.button_pause;
+//                    // TODO: 暂停当前活动，修改持续时间
+//                }
+//                else if(pauseButtonDrawableId == R.drawable.button_pause) {
+//                    pauseButton.setBackgroundResource(R.drawable.button_playing);
+//                    pauseButtonDrawableId = R.drawable.button_playing;
+//                    // TODO: 恢复当前活动，修改持续时间
+//                }
             }
         });
         pauseButton.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                if(pauseButtonDrawableId == R.drawable.button_pause || pauseButtonDrawableId == R.drawable.button_playing){
+                if(/*pauseButtonDrawableId == R.drawable.button_pause || */pauseButtonDrawableId == R.drawable.button_playing){
                     pauseButton.setBackgroundResource(R.drawable.button_not_play);
                     pauseButtonDrawableId = R.drawable.button_not_play;
                     // TODO: 结束当前活动，修改持续时间
@@ -478,49 +497,132 @@ public class MainActivity extends BaseActivity implements
     @Override
     // ****与feature有关联**** 点击活动卡片时的操作
     public void onItemClick(int adapterPosition) {
+        AlertDialog.Builder dialog = new AlertDialog.Builder (MainActivity.
+                this);
+        dialog.setTitle("Second confirmation");
+        dialog.setMessage("Do you want to end the current activity？");
+        dialog.setCancelable(false);
+
+
         // 从适配器中获取用户点击的项目
         DiaryActivity newAct = selectAdapter.item(adapterPosition);
         if(newAct != ActivityHelper.helper.getCurrentActivity()) {
-            // 如果选择的是新活动
-            // 设置为新选择的活动
-            ActivityHelper.helper.setCurrentActivity(newAct);
+            if(ActivityHelper.helper.getCurrentActivity() != null) {
+                dialog.setPositiveButton("Yes", new DialogInterface.
+                        OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // 如果选择的是新活动
+                        // 设置为新选择的活动
+                        ActivityHelper.helper.setCurrentActivity(newAct);
 
-            // 清空搜索视图的查询并将其设置为图标化状态。
-            searchView.setQuery("", false);
-            searchView.setIconified(true);
+                        // 清空搜索视图的查询并将其设置为图标化状态。
+                        searchView.setQuery("", false);
+                        searchView.setIconified(true);
 
-            //创建一个SpannableStringBuilder对象，该对象包含了新活动的名称，并设置了前景色、样式和相对大小。
-            SpannableStringBuilder snackbarText = new SpannableStringBuilder();
-            snackbarText.append(newAct.getName());
-            int end = snackbarText.length();
-            // 创建了一个新的前景色样式，0和end定义了应用样式的文本范围，Spannable.SPAN_INCLUSIVE_INCLUSIVE定义了新插入文本的样式应用规则
-            snackbarText.setSpan(new ForegroundColorSpan(newAct.getColor()), 0, end, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
-            // 设置文本的样式为粗体。
-            snackbarText.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), 0, end, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
-            // 设置文本的相对大小。
-            snackbarText.setSpan(new RelativeSizeSpan((float) 1.4152), 0, end, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+                        //创建一个SpannableStringBuilder对象，该对象包含了新活动的名称，并设置了前景色、样式和相对大小。
+                        SpannableStringBuilder snackbarText = new SpannableStringBuilder();
+                        snackbarText.append(newAct.getName());
+                        int end = snackbarText.length();
+                        // 创建了一个新的前景色样式，0和end定义了应用样式的文本范围，Spannable.SPAN_INCLUSIVE_INCLUSIVE定义了新插入文本的样式应用规则
+                        snackbarText.setSpan(new ForegroundColorSpan(newAct.getColor()), 0, end, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+                        // 设置文本的样式为粗体。
+                        snackbarText.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), 0, end, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+                        // 设置文本的相对大小。
+                        snackbarText.setSpan(new RelativeSizeSpan((float) 1.4152), 0, end, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
 
-            // 创建一个Snackbar对象，显示新活动的名称，并添加了一个撤销操作。
-            // 如果用户点击撤销，将调用ActivityHelper.helper.undoLastActivitySelection();
-            // 来撤销最后一次活动的选择
-            Snackbar undoSnackBar = Snackbar.make(findViewById(R.id.main_layout),
-                    snackbarText, Snackbar.LENGTH_LONG);
-            undoSnackBar.setAction(R.string.action_undo, new View.OnClickListener() {
-                /**
-                 * Called when a view has been clicked.
-                 *
-                 * @param v The view that was clicked.
-                 */
-                @Override
-                public void onClick(View v) {
-                    Log.v(TAG, "UNDO Activity Selection");
-                    ActivityHelper.helper.undoLastActivitySelection();
-                }
-            });
-            undoSnackBar.show();
+                        // 创建一个Snackbar对象，显示新活动的名称，并添加了一个撤销操作。
+                        // 如果用户点击撤销，将调用ActivityHelper.helper.undoLastActivitySelection();
+                        // 来撤销最后一次活动的选择
+                        Snackbar undoSnackBar = Snackbar.make(findViewById(R.id.main_layout),
+                                snackbarText, Snackbar.LENGTH_LONG);
+                        undoSnackBar.setAction(R.string.action_undo, new View.OnClickListener() {
+                            /**
+                             * Called when a view has been clicked.
+                             *
+                             * @param v The view that was clicked.
+                             */
+                            @Override
+                            public void onClick(View v) {
+                                Log.v(TAG, "UNDO Activity Selection");
+                                ActivityHelper.helper.undoLastActivitySelection();
+                            }
+                        });
+                        undoSnackBar.show();
+                        //修改按钮
+                        pauseButton.setBackgroundResource(R.drawable.button_not_play);
+                        pauseButtonDrawableId = R.drawable.button_not_play;
+                    }
+                });
+                dialog.setNegativeButton("Cancel", new DialogInterface.
+                        OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                });
+                dialog.show();
+            }
+            else{
+                // 如果选择的是新活动
+                // 设置为新选择的活动
+                ActivityHelper.helper.setCurrentActivity(newAct);
+
+                // 清空搜索视图的查询并将其设置为图标化状态。
+                searchView.setQuery("", false);
+                searchView.setIconified(true);
+
+                //创建一个SpannableStringBuilder对象，该对象包含了新活动的名称，并设置了前景色、样式和相对大小。
+                SpannableStringBuilder snackbarText = new SpannableStringBuilder();
+                snackbarText.append(newAct.getName());
+                int end = snackbarText.length();
+                // 创建了一个新的前景色样式，0和end定义了应用样式的文本范围，Spannable.SPAN_INCLUSIVE_INCLUSIVE定义了新插入文本的样式应用规则
+                snackbarText.setSpan(new ForegroundColorSpan(newAct.getColor()), 0, end, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+                // 设置文本的样式为粗体。
+                snackbarText.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), 0, end, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+                // 设置文本的相对大小。
+                snackbarText.setSpan(new RelativeSizeSpan((float) 1.4152), 0, end, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+
+                // 创建一个Snackbar对象，显示新活动的名称，并添加了一个撤销操作。
+                // 如果用户点击撤销，将调用ActivityHelper.helper.undoLastActivitySelection();
+                // 来撤销最后一次活动的选择
+                Snackbar undoSnackBar = Snackbar.make(findViewById(R.id.main_layout),
+                        snackbarText, Snackbar.LENGTH_LONG);
+                undoSnackBar.setAction(R.string.action_undo, new View.OnClickListener() {
+                    /**
+                     * Called when a view has been clicked.
+                     *
+                     * @param v The view that was clicked.
+                     */
+                    @Override
+                    public void onClick(View v) {
+                        Log.v(TAG, "UNDO Activity Selection");
+                        ActivityHelper.helper.undoLastActivitySelection();
+                    }
+                });
+                undoSnackBar.show();
+                //修改按钮
+                pauseButton.setBackgroundResource(R.drawable.button_not_play);
+                pauseButtonDrawableId = R.drawable.button_not_play;
+            }
         }else{
             /* clicked the currently active activity in the list, so let's terminate it due to #176 */
-            ActivityHelper.helper.setCurrentActivity(null);
+            dialog.setPositiveButton("Yes", new DialogInterface.
+                    OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    ActivityHelper.helper.setCurrentActivity(null);
+                    //修改按钮
+                    pauseButton.setBackgroundResource(R.drawable.button_not_play);
+                    pauseButtonDrawableId = R.drawable.button_not_play;
+                }
+            });
+            dialog.setNegativeButton("Cancel", new DialogInterface.
+                    OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                }
+            });
+            dialog.show();
         }
     }
 
