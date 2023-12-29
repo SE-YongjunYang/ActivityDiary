@@ -19,7 +19,7 @@
 
 package de.rampro.activitydiary.model;
 
-public class DiaryActivity{
+public class DiaryActivity implements Cloneable{
     private String mName;
     private int mId;
     private int mColor;
@@ -55,5 +55,17 @@ public class DiaryActivity{
     @Override
     public int hashCode(){
         return mId;
+    }
+
+    //重载
+    @Override
+    public Object clone() {
+        DiaryActivity diaryActivity = null;
+        try{
+            diaryActivity = (DiaryActivity) super.clone();
+        }catch(CloneNotSupportedException e) {
+            e.printStackTrace();
+        }
+        return diaryActivity;
     }
 }
