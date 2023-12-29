@@ -203,6 +203,7 @@ public class HistoryActivity extends BaseActivity implements
     private void handleIntent(Intent intent) {
         String query = null;
         String action = intent.getAction();
+        Log.d("TAG","Action"+action);
         if (ActivityDiaryContentProvider.SEARCH_ACTIVITY.equals(intent.getAction())) {
             query = intent.getStringExtra(SearchManager.QUERY);
             Uri data = intent.getData();
@@ -229,12 +230,17 @@ public class HistoryActivity extends BaseActivity implements
 
             String date = intent.getStringExtra("date");
             if (data != null ) {
+                Log.d("TAG", "Not empty!");
+
                 query = data.getPath();
                 query = query.replaceFirst("/", "");
                 filterHistoryDates(query);
             }
             if (date != null ) {
+                Log.d("TAG", "Not empty!");
+
                 query = date;
+                Log.d("TAG",query);
                 filterHistoryDates(query);
             }
         } else if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
@@ -252,7 +258,7 @@ public class HistoryActivity extends BaseActivity implements
 
             getContentResolver().delete(uri,
                     ActivityDiaryContract.DiarySearchSuggestion.SUGGESTION + " LIKE ? AND "
-                    + ActivityDiaryContract.DiarySearchSuggestion.ACTION + " LIKE ?",
+                            + ActivityDiaryContract.DiarySearchSuggestion.ACTION + " LIKE ?",
                     new String[]{query, intent.getAction()});
 
             values.put(ActivityDiaryContract.DiarySearchSuggestion.SUGGESTION, query);
@@ -261,9 +267,9 @@ public class HistoryActivity extends BaseActivity implements
 
             getContentResolver().delete(uri,
                     ActivityDiaryContract.DiarySearchSuggestion._ID +
-                    " IN (SELECT " + ActivityDiaryContract.DiarySearchSuggestion._ID +
-                    " FROM " + ActivityDiaryContract.DiarySearchSuggestion.TABLE_NAME +
-                    " ORDER BY " + ActivityDiaryContract.DiarySearchSuggestion._ID + " DESC LIMIT " + SEARCH_SUGGESTION_DISPLAY_COUNT + ",1)",
+                            " IN (SELECT " + ActivityDiaryContract.DiarySearchSuggestion._ID +
+                            " FROM " + ActivityDiaryContract.DiarySearchSuggestion.TABLE_NAME +
+                            " ORDER BY " + ActivityDiaryContract.DiarySearchSuggestion._ID + " DESC LIMIT " + SEARCH_SUGGESTION_DISPLAY_COUNT + ",1)",
                     null);
         }
     }
@@ -341,8 +347,9 @@ public class HistoryActivity extends BaseActivity implements
 
     /* show only activities that match date
      */
-    private void filterHistoryDates(String date) {
+    public void filterHistoryDates(String date) {
         Long dateInMilis = checkDateFormatAndParse(date);
+        Log.d("TAG",":"+dateInMilis);
         if (dateInMilis != null) {
             Bundle args = new Bundle();
             args.putInt("TYPE", SEARCH_TYPE_DATE);
