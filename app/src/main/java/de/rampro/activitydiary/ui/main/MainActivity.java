@@ -360,6 +360,15 @@ public class MainActivity extends BaseActivity implements
         /*********************************************/
         /*新增pauseButton及其点击事件*/
         pauseButton = (Button) findViewById(R.id.pause_button);
+
+        // 活动重新create时，若当前正在进行活动，设置newToDoAct和按钮
+        if(ActivityHelper.helper.getCurrentActivity() != null) {
+            newToDoAct =(DiaryActivity) ActivityHelper.helper.getCurrentActivity().clone();
+            // 修改按钮
+            pauseButton.setBackgroundResource(R.drawable.button_playing);
+            pauseButtonDrawableId = R.drawable.button_playing;
+        }
+
         pauseButton.setOnClickListener(new View.OnClickListener() {
 
             @Override
