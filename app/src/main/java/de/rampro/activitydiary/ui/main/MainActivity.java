@@ -222,6 +222,7 @@ public class MainActivity extends BaseActivity implements
                 // 如果true(代表当前活动可由点击最上面的活动标签终止,在：setting -> Terminate activity by.)
                 // 或者不存在，设置当前活动为null
                 if(ActivityHelper.helper.getCurrentActivity() != null) {
+                    // 如果当前活动不为null, 则需要二次确认
                     AlertDialog.Builder dialog = new AlertDialog.Builder(MainActivity.
                             this);
                     dialog.setTitle("Second confirmation");
@@ -248,6 +249,7 @@ public class MainActivity extends BaseActivity implements
                     dialog.show();
                 }
                 else{
+                    // 当前活动为null, 直接修改
                     // 修改当前活动和newToDoAct都为null，newToDoAct要在前面
                     newToDoAct = null;
                     ActivityHelper.helper.setCurrentActivity(null);
@@ -374,8 +376,7 @@ public class MainActivity extends BaseActivity implements
             @Override
             public void onClick(View v) {
                 if(pauseButtonDrawableId == R.drawable.button_not_play) {
-//                    newToDoAct = (DiaryActivity) ActivityHelper.helper.getCurrentActivity().clone();
-                    if(newToDoAct == null/* && ActivityHelper.helper.getCurrentActivity() == null*/){
+                    if(newToDoAct == null){
                         // 如果当前无活动, 且newToDoAct 为null
                         Toast.makeText(MainActivity.this, "To perform this action it is necessary to select an activity first", Toast.LENGTH_LONG).show();
                     }
